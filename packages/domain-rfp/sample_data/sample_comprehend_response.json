@@ -1,0 +1,89 @@
+{
+  "Entities": [
+    {
+      "Score": 0.97,
+      "Type": "ORGANIZATION",
+      "Text": "Meridian Financial Services Corp.",
+      "BeginOffset": 98,
+      "EndOffset": 131
+    },
+    {
+      "Score": 0.93,
+      "Type": "PERSON",
+      "Text": "Jordan Blake",
+      "BeginOffset": 149,
+      "EndOffset": 161
+    },
+    {
+      "Score": 0.96,
+      "Type": "DATE",
+      "Text": "December 31, 2026",
+      "BeginOffset": 1180,
+      "EndOffset": 1197
+    },
+    {
+      "Score": 0.91,
+      "Type": "DATE",
+      "Text": "Q3 2026",
+      "BeginOffset": 1288,
+      "EndOffset": 1295
+    },
+    {
+      "Score": 0.94,
+      "Type": "DATE",
+      "Text": "September 15, 2026",
+      "BeginOffset": 1340,
+      "EndOffset": 1358
+    },
+    {
+      "Score": 0.98,
+      "Type": "QUANTITY",
+      "Text": "$1,250,000.00",
+      "BeginOffset": 1488,
+      "EndOffset": 1501
+    },
+    {
+      "Score": 0.89,
+      "Type": "LOCATION",
+      "Text": "United States",
+      "BeginOffset": 980,
+      "EndOffset": 993
+    },
+    {
+      "Score": 0.88,
+      "Type": "LOCATION",
+      "Text": "Chicago",
+      "BeginOffset": 1720,
+      "EndOffset": 1727
+    }
+  ],
+  "PiiEntities": [
+    {
+      "Score": 0.99,
+      "Type": "EMAIL",
+      "BeginOffset": 200,
+      "EndOffset": 240
+    },
+    {
+      "Score": 0.95,
+      "Type": "NAME",
+      "BeginOffset": 149,
+      "EndOffset": 161
+    }
+  ],
+  "KeyPhrases": [
+    {"Score": 0.92, "Text": "enterprise customer engagement platform", "BeginOffset": 40, "EndOffset": 79},
+    {"Score": 0.9, "Text": "REST API integration capability", "BeginOffset": 420, "EndOffset": 451},
+    {"Score": 0.88, "Text": "SOC 2 Type II certification", "BeginOffset": 820, "EndOffset": 847},
+    {"Score": 0.87, "Text": "United States data residency controls", "BeginOffset": 960, "EndOffset": 997},
+    {"Score": 0.86, "Text": "dedicated account manager", "BeginOffset": 1580, "EndOffset": 1605}
+  ],
+  "Sentiment": "NEUTRAL",
+  "SentimentScore": {
+    "Positive": 0.12,
+    "Negative": 0.08,
+    "Neutral": 0.74,
+    "Mixed": 0.06
+  },
+  "LanguageCode": "en"
+}

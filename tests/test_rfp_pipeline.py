@@ -1,0 +1,279 @@
+"""End-to-end tests for the RFP analysis pipeline."""
+
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+
+import pytest
+
+from packages.core.cloud.base import ModelProvider, ModelResponse
+from packages.core.logging.logger import configure_logging, get_logger
+from packages.core.metrics.tracker import MetricsTracker
+from packages.core.orchestrator.engine import OrchestratorEngine
+from packages.core.services.comprehend import LocalTextAnalyzer
+from packages.core.services.textract import LocalDocumentProcessor
+from packages.core.types.schemas import TokenUsage
+from packages.domain_rfp.pipeline import RfpAnalysisPipeline, register_rfp_agents
+
+SAMPLE_RFP = (
+    Path(__file__).resolve().parents[1]
+    / "packages"
+    / "domain-rfp"
+    / "sample_data"
+    / "sample_rfp_text.txt"
+)
+
+
+class PipelineScriptedProvider(ModelProvider):
+    """Scripted provider that returns role-appropriate JSON payloads."""
+
+    def __init__(self) -> None:
+        self.call_count = 0
+
+    async def invoke(
+        self,
+        prompt: str,
+        model_id: str | None = None,
+        temperature: float = 0.7,
+        max_tokens: int = 1024,
+        top_p: float = 0.9,
+        stop_sequences: list[str] | None = None,
+        *,
+        agent_name: str = "unknown",
+        session_id: str = "unknown",
+    ) -> ModelResponse:
+        self.call_count += 1
+        if agent_name == "requirements_extractor":
+            payload = {
+                "requirements": [
+                    {
+                        "requirement_id": "REQ-001",
+                        "text": "Provide REST API integration.",
+                        "category": "technical",
+                        "priority": "must-have",
+                        "source_page": 1,
+                        "source_section": "2.1",
+                        "entities": [],
+                        "pii_detected": False,
+                    },
+                    {
+                        "requirement_id": "REQ-002",
+                        "text": "Maintain SOC 2 Type II certification.",
+                        "category": "compliance",
+                        "priority": "must-have",
+                        "source_page": 1,
+                        "source_section": "3.1",
+                        "entities": [],
+                        "pii_detected": False,
+                    },
+                    {
+                        "requirement_id": "REQ-003",
+                        "text": "Provide on-site support within 4 hours.",
+                        "category": "staffing",
+                        "priority": "should-have",
+                        "source_page": 1,
+                        "source_section": "6.2",
+                        "entities": [],
+                        "pii_detected": False,
+                    },
+                ],
+                "total_extracted": 3,
+                "document_pages": 1,
+                "extraction_confidence": 0.82,
+                "pii_summary": {"count": 1, "types": {"EMAIL": 1}},
+            }
+        elif agent_name == "capability_mapper":
+            payload = {
+                "mappings": [
+                    {
+                        "requirement_id": "REQ-001",
+                        "requirement_text": "Provide REST API integration.",
+                        "match_level": "full",
+                        "capability": "REST API Integration Platform",
+                        "response_draft": "Supported.",
+                        "confidence": 0.94,
+                        "gap_note": None,
+                    },
+                    {
+                        "requirement_id": "REQ-002",
+                        "requirement_text": "Maintain SOC 2 Type II certification.",
+                        "match_level": "full",
+                        "capability": "SOC 2 Type II Certified",
+                        "response_draft": "Supported.",
+                        "confidence": 0.96,
+                        "gap_note": None,
+                    },
+                    {
+                        "requirement_id": "REQ-003",
+                        "requirement_text": "Provide on-site support within 4 hours.",
+                        "match_level": "partial",
+                        "capability": "24/7 Enterprise Support",
+                        "response_draft": "Partial support.",
+                        "confidence": 0.58,
+                        "gap_note": "On-site timing gap.",
+                    },
+                ],
+                "fully_matched": 2,
+                "partially_matched": 1,
+                "unmatched": 0,
+                "overall_confidence": 0.84,
+            }
+        else:
+            payload = {
+                "assessments": [
+                    {
+                        "requirement_id": "REQ-003",
+                        "requirement_text": "Provide on-site support within 4 hours.",
+                        "gap_description": "On-site SLA not guaranteed.",
+                        "risk_severity": "medium",
+                        "reasoning": (
+                            "1. Demand is 4-hour on-site support. "
+                            "2. Capability is 24/7 remote support. "
+                            "3. Gap is physical response guarantee. "
+                            "4. Impact is moderate. "
+                            "5. Severity medium. "
+                            "6. Mitigate via local partner."
+                        ),
+                        "mitigation_options": ["Local partner"],
+                        "recommendation": "propose-alternative",
+                    }
+                ],
+                "critical_gaps": 0,
+                "high_gaps": 0,
+                "medium_gaps": 1,
+                "low_gaps": 0,
+                "overall_risk": "acceptable",
+                "summary": "Single medium gap with viable mitigation.",
+            }
+
+        return ModelResponse(
+            content=json.dumps(payload),
+            model_id=model_id or "mock-model",
+            token_usage=TokenUsage(
+                input_tokens=120,
+                output_tokens=180,
+                model_id=model_id or "mock-model",
+                estimated_cost_usd=0.02,
+            ),
+            latency_ms=8,
+        )
+
+
+class FailingExtractionProvider(PipelineScriptedProvider):
+    """Returns malformed JSON for extraction to exercise graceful handling."""
+
+    async def invoke(self, prompt: str, **kwargs) -> ModelResponse:  # type: ignore[no-untyped-def]
+        agent_name = kwargs.get("agent_name", "unknown")
+        if agent_name == "requirements_extractor":
+            return ModelResponse(
+                content="not-json",
+                model_id="mock-model",
+                token_usage=TokenUsage(
+                    input_tokens=10,
+                    output_tokens=5,
+                    model_id="mock-model",
+                    estimated_cost_usd=0.001,
+                ),
+                latency_ms=2,
+            )
+        # Mapper/analyzer still get valid empty-friendly payloads.
+        if agent_name == "capability_mapper":
+            payload = {
+                "mappings": [],
+                "fully_matched": 0,
+                "partially_matched": 0,
+                "unmatched": 0,
+                "overall_confidence": 0.2,
+            }
+        else:
+            payload = {
+                "assessments": [],
+                "critical_gaps": 0,
+                "high_gaps": 0,
+                "medium_gaps": 0,
+                "low_gaps": 0,
+                "overall_risk": "acceptable",
+                "summary": "No gaps because extraction failed.",
+            }
+        return ModelResponse(
+            content=json.dumps(payload),
+            model_id="mock-model",
+            token_usage=TokenUsage(
+                input_tokens=20,
+                output_tokens=20,
+                model_id="mock-model",
+                estimated_cost_usd=0.002,
+            ),
+            latency_ms=2,
+        )
+
+
+@pytest.mark.asyncio
+async def test_pipeline_returns_all_sections(capsys: pytest.CaptureFixture[str]) -> None:
+    configure_logging(log_level="INFO", log_format="json", force=True)
+    get_logger("domain_rfp.pipeline")
+
+    metrics = MetricsTracker()
+    provider = PipelineScriptedProvider()
+    # Manually track some LLM calls to simulate provider-side metric recording.
+    metrics.track_llm_call("requirements_extractor", "mock-model", 120, 180, 8, "pipe-1")
+    metrics.track_llm_call("capability_mapper", "mock-model", 120, 180, 8, "pipe-1")
+    metrics.track_llm_call("gap_analyzer", "mock-model", 120, 180, 8, "pipe-1")
+
+    engine = OrchestratorEngine(provider=provider, metrics=metrics)
+    pipeline = RfpAnalysisPipeline(
+        provider=provider,
+        metrics=metrics,
+        document_processor=LocalDocumentProcessor(),
+        text_analyzer=LocalTextAnalyzer(),
+        orchestrator=engine,
+    )
+
+    result = await pipeline.analyze(str(SAMPLE_RFP), session_id="pipe-1")
+    assert "extraction_result" in result
+    assert "mapping_result" in result
+    assert "gap_analysis_result" in result
+    assert "pipeline_metrics" in result
+    assert result["pipeline_metrics"]["agent_count"] == 3
+    assert result["pipeline_metrics"]["total_time_ms"] >= 0
+    assert result["pipeline_metrics"]["total_tokens"] > 0
+    assert result["pipeline_metrics"]["total_cost_usd"] >= 0
+
+    registered = set(engine._registry.registered_agents.keys())
+    assert registered >= {
+        "requirements_extractor",
+        "capability_mapper",
+        "gap_analyzer",
+    }
+
+    captured = capsys.readouterr().out
+    assert "rfp_pipeline_complete" in captured
+    assert "total_tokens" in captured
+
+
+@pytest.mark.asyncio
+async def test_pipeline_handles_extraction_failure_gracefully() -> None:
+    metrics = MetricsTracker()
+    provider = FailingExtractionProvider()
+    pipeline = RfpAnalysisPipeline(
+        provider=provider,
+        metrics=metrics,
+        document_processor=LocalDocumentProcessor(),
+        text_analyzer=LocalTextAnalyzer(),
+    )
+    result = await pipeline.analyze(str(SAMPLE_RFP), session_id="pipe-fail")
+    assert result["extraction_result"]["total_extracted"] == 0
+    assert "mapping_result" in result
+    assert "gap_analysis_result" in result
+    assert result["pipeline_metrics"]["agent_count"] == 3
+
+
+def test_register_rfp_agents_with_orchestrator() -> None:
+    provider = PipelineScriptedProvider()
+    engine = OrchestratorEngine(provider=provider, metrics=MetricsTracker())
+    register_rfp_agents(engine)
+    assert "requirements_extractor" in engine._registry.registered_agents
+    assert "capability_mapper" in engine._registry.registered_agents
+    assert "gap_analyzer" in engine._registry.registered_agents

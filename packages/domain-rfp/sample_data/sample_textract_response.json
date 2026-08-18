@@ -1,0 +1,173 @@
+{
+  "DocumentMetadata": {
+    "Pages": 1
+  },
+  "Blocks": [
+    {
+      "BlockType": "PAGE",
+      "Id": "page-1",
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 1.0, "Height": 1.0, "Left": 0.0, "Top": 0.0},
+        "Polygon": [
+          {"X": 0.0, "Y": 0.0},
+          {"X": 1.0, "Y": 0.0},
+          {"X": 1.0, "Y": 1.0},
+          {"X": 0.0, "Y": 1.0}
+        ]
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-1",
+      "Text": "REQUEST FOR PROPOSAL",
+      "Confidence": 99.12,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.42, "Height": 0.03, "Left": 0.29, "Top": 0.05}
+      },
+      "Relationships": [{"Type": "CHILD", "Ids": ["word-1", "word-2", "word-3"]}]
+    },
+    {
+      "BlockType": "WORD",
+      "Id": "word-1",
+      "Text": "REQUEST",
+      "Confidence": 99.4,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.12, "Height": 0.03, "Left": 0.29, "Top": 0.05}
+      }
+    },
+    {
+      "BlockType": "WORD",
+      "Id": "word-2",
+      "Text": "FOR",
+      "Confidence": 98.7,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.05, "Height": 0.03, "Left": 0.42, "Top": 0.05}
+      }
+    },
+    {
+      "BlockType": "WORD",
+      "Id": "word-3",
+      "Text": "PROPOSAL",
+      "Confidence": 99.1,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.14, "Height": 0.03, "Left": 0.48, "Top": 0.05}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-2",
+      "Text": "Issued by: Meridian Financial Services Corp.",
+      "Confidence": 97.55,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.62, "Height": 0.025, "Left": 0.1, "Top": 0.12}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-3",
+      "Text": "Email: jordan.blake@meridianfinancial.example",
+      "Confidence": 96.2,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.58, "Height": 0.022, "Left": 0.1, "Top": 0.16}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-4",
+      "Text": "2.1 The solution shall provide a documented REST API integration capability with OAuth 2.0",
+      "Confidence": 94.8,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.8, "Height": 0.022, "Left": 0.1, "Top": 0.28}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-5",
+      "Text": "2.2 The platform must meet a minimum monthly uptime SLA of 99.9%",
+      "Confidence": 95.4,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.78, "Height": 0.022, "Left": 0.1, "Top": 0.32}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-6",
+      "Text": "2.3 All customer data at rest must be encrypted using AES-256",
+      "Confidence": 93.1,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.76, "Height": 0.022, "Left": 0.1, "Top": 0.36}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-7",
+      "Text": "3.1 The vendor must maintain a current SOC 2 Type II certification",
+      "Confidence": 96.7,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.74, "Height": 0.022, "Left": 0.1, "Top": 0.42}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-8",
+      "Text": "4.1 Full production implementation must be completed no later than December 31, 2026.",
+      "Confidence": 92.45,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.82, "Height": 0.022, "Left": 0.1, "Top": 0.52}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-9",
+      "Text": "5.1 Total first-year cost of ownership shall not exceed $1,250,000.00 USD",
+      "Confidence": 91.2,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.8, "Height": 0.022, "Left": 0.1, "Top": 0.62}
+      }
+    },
+    {
+      "BlockType": "LINE",
+      "Id": "line-10",
+      "Text": "6.1 The vendor shall assign a dedicated account manager",
+      "Confidence": 94.0,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.7, "Height": 0.022, "Left": 0.1, "Top": 0.72}
+      }
+    },
+    {
+      "BlockType": "WORD",
+      "Id": "word-soc",
+      "Text": "SOC",
+      "Confidence": 97.9,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.04, "Height": 0.02, "Left": 0.42, "Top": 0.42}
+      }
+    },
+    {
+      "BlockType": "WORD",
+      "Id": "word-api",
+      "Text": "REST",
+      "Confidence": 98.3,
+      "Page": 1,
+      "Geometry": {
+        "BoundingBox": {"Width": 0.05, "Height": 0.02, "Left": 0.48, "Top": 0.28}
+      }
+    }
+  ],
+  "DetectDocumentTextModelVersion": "1.0"
+}

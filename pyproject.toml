@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-orchestrator"
+version = "0.1.0"
+description = "Enterprise-grade multi-agent orchestration framework"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph",
+    "langchain-core",
+    "langchain-aws",
+    "boto3",
+    "pydantic>=2.0",
+    "psycopg2-binary",
+    "redis",
+    "python-dotenv",
+    "structlog",
+    "httpx",
+    "PyPDF2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+]
+
+[tool.setuptools]
+packages = [
+    "packages",
+    "packages.core",
+    "packages.core.cloud",
+    "packages.core.logging",
+    "packages.core.metrics",
+    "packages.core.orchestrator",
+    "packages.core.types",
+    "packages.core.services",
+    "packages.domain_rfp",
+    "packages.domain_rfp.agents",
+    "packages.domain_rfp.prompts",
+]
+
+[tool.setuptools.package-dir]
+"packages.domain_rfp" = "packages/domain-rfp"
+"packages.domain_rfp.agents" = "packages/domain-rfp/agents"
+"packages.domain_rfp.prompts" = "packages/domain-rfp/prompts"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["."]

@@ -1,0 +1,48 @@
+REQUEST FOR PROPOSAL
+Enterprise Customer Engagement Platform
+RFP No. CEP-2026-014
+Issued by: Meridian Financial Services Corp.
+Primary Contact: Jordan Blake, Procurement Manager
+Email: jordan.blake@meridianfinancial.example
+Phone: 312-555-0147
+
+1. Purpose
+Meridian Financial Services Corp. seeks a qualified vendor to implement and support an
+enterprise customer engagement platform that integrates with existing systems of record,
+meets regulated-industry compliance obligations, and can be deployed within the stated
+implementation timeline and budget envelope.
+
+2. Technical Requirements
+2.1 The solution shall provide a documented REST API integration capability with OAuth 2.0
+authentication, webhook eventing, and support for near-real-time data exchange with CRM
+and core banking applications.
+2.2 The platform must meet a minimum monthly uptime SLA of 99.9%, measured excluding
+mutually agreed maintenance windows, with service credits defined in the MSA.
+2.3 All customer data at rest must be encrypted using AES-256 (or equivalent) and all data
+in transit must use TLS 1.2 or higher.
+
+3. Compliance Requirements
+3.1 The vendor must maintain a current SOC 2 Type II certification covering security,
+availability, and confidentiality trust service criteria, and provide the latest report under NDA.
+3.2 Customer data processed under this engagement must support United States data
+residency controls; production data shall not leave US regions without prior written approval.
+
+4. Timeline Requirements
+4.1 Full production implementation must be completed no later than December 31, 2026.
+4.2 The vendor shall deliver a detailed project plan with milestones for discovery, pilot,
+and production cutover no later than Q3 2026, including a pilot go-live target of
+September 15, 2026.
+
+5. Budget Constraints
+5.1 Total first-year cost of ownership (licenses, implementation, and support) shall not
+exceed $1,250,000.00 USD, exclusive of pre-approved change orders.
+
+6. Staffing Requirements
+6.1 The vendor shall assign a dedicated account manager (or Customer Success Manager)
+as the single point of contact for commercial and service escalations.
+6.2 The vendor must provide on-site technical support for Severity-1 incidents at the
+Meridian Chicago headquarters within four (4) hours of incident declaration during
+business days.
+
+7. Submission Instructions
+Proposals are due by 5:00 PM CT on October 1, 2026. Late submissions will not be considered.
