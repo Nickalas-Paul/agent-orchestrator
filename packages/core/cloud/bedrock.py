@@ -12,7 +12,7 @@ from botocore.exceptions import BotoCoreError, ClientError
 from packages.core.cloud.base import ModelProvider, ModelResponse
 from packages.core.cloud.config import ModelConfig
 from packages.core.logging.logger import get_logger
-from packages.core.metrics.tracker import MetricsTracker, estimate_cost
+from packages.core.metrics.tracker import estimate_cost
 from packages.core.types.schemas import TokenUsage
 
 logger = get_logger("cloud.bedrock")
@@ -40,18 +40,15 @@ class BedrockProvider(ModelProvider):
     def __init__(
         self,
         config: ModelConfig,
-        metrics: MetricsTracker | None = None,
         client: Any | None = None,
     ) -> None:
         """Initialize the Bedrock provider.
 
         Args:
             config: Provider configuration.
-            metrics: Optional metrics tracker.
             client: Optional pre-built boto3 client (useful for tests).
         """
         self._config = config
-        self._metrics = metrics or MetricsTracker()
         if client is not None:
             self._client = client
         else:
@@ -106,15 +103,6 @@ class BedrockProvider(ModelProvider):
             output_tokens=output_tokens,
             model_id=resolved_model,
             estimated_cost_usd=cost,
-        )
-
-        self._metrics.track_llm_call(
-            agent_name=agent_name,
-            model_id=resolved_model,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            latency_ms=latency_ms,
-            session_id=session_id,
         )
         logger.info(
             "bedrock_invoke_complete",

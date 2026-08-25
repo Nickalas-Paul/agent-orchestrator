@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 
 from packages.core.cloud.base import ModelProvider
-from packages.core.metrics.tracker import MetricsTracker
 
 
 class ModelConfig(BaseModel):
@@ -57,13 +56,11 @@ def get_model_config(*, reload_env: bool = False) -> ModelConfig:
 
 def get_provider(
     config: ModelConfig | None = None,
-    metrics: MetricsTracker | None = None,
 ) -> ModelProvider:
     """Factory that returns the configured ``ModelProvider`` instance.
 
     Args:
         config: Optional explicit config; defaults to environment config.
-        metrics: Optional shared metrics tracker.
 
     Returns:
         A concrete ``ModelProvider`` implementation.
@@ -73,11 +70,10 @@ def get_provider(
     from packages.core.cloud.local_provider import LocalProvider
 
     resolved = config or get_model_config()
-    tracker = metrics or MetricsTracker()
 
     if resolved.provider == "bedrock":
-        return BedrockProvider(config=resolved, metrics=tracker)
-    return LocalProvider(config=resolved, metrics=tracker)
+        return BedrockProvider(config=resolved)
+    return LocalProvider(config=resolved)
 
 
 @lru_cache(maxsize=1)

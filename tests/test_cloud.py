@@ -12,23 +12,26 @@ import pytest
 from packages.core.cloud.bedrock import BedrockProvider
 from packages.core.cloud.config import ModelConfig, get_provider
 from packages.core.cloud.local_provider import LocalProvider
-from packages.core.metrics.tracker import MetricsTracker
 
 
 def test_get_provider_returns_bedrock_when_configured() -> None:
     config = ModelConfig(provider="bedrock", aws_region="us-east-1")
-    provider = get_provider(config=config, metrics=MetricsTracker())
+    provider = get_provider(config=config)
     assert isinstance(provider, BedrockProvider)
 
 
 def test_get_provider_returns_local_when_configured() -> None:
     config = ModelConfig(provider="local", local_endpoint="http://localhost:11434")
-    provider = get_provider(config=config, metrics=MetricsTracker())
+    provider = get_provider(config=config)
     assert isinstance(provider, LocalProvider)
 
 
 @pytest.mark.asyncio
-async def test_local_provider_graceful_mock_mode_on_unreachable_endpoint() -> None:
+async def test_local_provider_graceful_mock_mode_on_unreachable_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ALLOW_MOCK_LLM", "true")
+
     def _raise_connect_error(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("boom", request=request)
 
@@ -40,7 +43,6 @@ async def test_local_provider_graceful_mock_mode_on_unreachable_endpoint() -> No
             local_endpoint="http://localhost:9",
             local_model_name="llama3",
         ),
-        metrics=MetricsTracker(),
         http_client=client,
     )
 
@@ -57,11 +59,35 @@ async def test_local_provider_graceful_mock_mode_on_unreachable_endpoint() -> No
     assert response.token_usage.output_tokens > 0
 
 
+@pytest.mark.asyncio
+async def test_local_provider_raises_when_mock_llm_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ALLOW_MOCK_LLM", "false")
+
+    def _raise_connect_error(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("boom", request=request)
+
+    transport = httpx.MockTransport(_raise_connect_error)
+    client = httpx.AsyncClient(transport=transport)
+    provider = LocalProvider(
+        config=ModelConfig(
+            provider="local",
+            local_endpoint="http://localhost:9",
+            local_model_name="llama3",
+        ),
+        http_client=client,
+    )
+
+    with pytest.raises(ConnectionError, match="ALLOW_MOCK_LLM is not enabled"):
+        await provider.invoke(prompt="Hello", agent_name="tester", session_id="sess-1")
+    await client.aclose()
+
+
 def test_bedrock_provider_constructs_correct_request_format() -> None:
     mock_client = MagicMock()
     provider = BedrockProvider(
         config=ModelConfig(provider="bedrock", bedrock_model_id="anthropic.claude-sonnet"),
-        metrics=MetricsTracker(),
         client=mock_client,
     )
 
@@ -86,7 +112,7 @@ def test_bedrock_provider_constructs_correct_request_format() -> None:
 
 
 @pytest.mark.asyncio
-async def test_bedrock_provider_invoke_uses_request_body(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_bedrock_provider_invoke_uses_request_body() -> None:
     """Ensure invoke_model is called with the Messages API JSON body."""
     captured: dict[str, Any] = {}
 
@@ -110,7 +136,6 @@ async def test_bedrock_provider_invoke_uses_request_body(monkeypatch: pytest.Mon
             provider="bedrock",
             bedrock_model_id="anthropic.claude-sonnet",
         ),
-        metrics=MetricsTracker(),
         client=mock_client,
     )
 

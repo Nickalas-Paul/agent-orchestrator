@@ -1,7 +1,8 @@
-"""Local model provider with graceful mock fallback."""
+"""Local model provider with opt-in mock fallback."""
 
 from __future__ import annotations
 
+import os
 import time
 from typing import Any
 
@@ -10,7 +11,7 @@ import httpx
 from packages.core.cloud.base import ModelProvider, ModelResponse
 from packages.core.cloud.config import ModelConfig
 from packages.core.logging.logger import get_logger
-from packages.core.metrics.tracker import MetricsTracker, estimate_cost
+from packages.core.metrics.tracker import estimate_cost
 from packages.core.types.schemas import TokenUsage
 
 logger = get_logger("cloud.local")
@@ -22,18 +23,15 @@ class LocalProvider(ModelProvider):
     def __init__(
         self,
         config: ModelConfig,
-        metrics: MetricsTracker | None = None,
         http_client: httpx.AsyncClient | None = None,
     ) -> None:
         """Initialize the local provider.
 
         Args:
             config: Provider configuration.
-            metrics: Optional metrics tracker.
             http_client: Optional shared httpx client (tests can inject mocks).
         """
         self._config = config
-        self._metrics = metrics or MetricsTracker()
         self._http_client = http_client
 
     async def invoke(
@@ -82,6 +80,12 @@ class LocalProvider(ModelProvider):
             mock_mode = False
         except (httpx.HTTPError, OSError, ValueError) as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
+            allow_mock = os.getenv("ALLOW_MOCK_LLM", "false").lower() == "true"
+            if not allow_mock:
+                raise ConnectionError(
+                    f"Local model endpoint unreachable at {endpoint} and ALLOW_MOCK_LLM is not enabled. "
+                    "Set ALLOW_MOCK_LLM=true to allow mock responses in development."
+                ) from exc
             content = (
                 "[local mock] Local model endpoint is unavailable. "
                 f"Returning mock response. Reason: {exc}"
@@ -105,14 +109,6 @@ class LocalProvider(ModelProvider):
             output_tokens=output_tokens,
             model_id=resolved_model,
             estimated_cost_usd=cost,
-        )
-        self._metrics.track_llm_call(
-            agent_name=agent_name,
-            model_id=resolved_model,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            latency_ms=latency_ms,
-            session_id=session_id,
         )
         logger.info(
             "local_invoke_complete",

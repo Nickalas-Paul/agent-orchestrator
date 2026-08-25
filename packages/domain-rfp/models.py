@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any
 from uuid import uuid4
 
@@ -79,3 +80,25 @@ class GapAnalysisResult(BaseModel):
     low_gaps: int = 0
     overall_risk: str = "acceptable"
     summary: str = ""
+
+
+class PipelineStatus(str, Enum):
+    """Terminal or paused status returned by ``RfpAnalysisPipeline.analyze``."""
+
+    COMPLETED = "completed"
+    PENDING_REVIEW = "pending_review"
+    FAILED = "failed"
+
+
+class PipelineResult(BaseModel):
+    """Structured result of a full RFP analysis pipeline run."""
+
+    status: PipelineStatus
+    job_id: str | None = None
+    extraction_result: dict[str, Any] = Field(default_factory=dict)
+    mapping_result: dict[str, Any] = Field(default_factory=dict)
+    gap_analysis_result: dict[str, Any] = Field(default_factory=dict)
+    evaluation_result: dict[str, Any] = Field(default_factory=dict)
+    pipeline_metrics: dict[str, Any] = Field(default_factory=dict)
+    agent_responses: list[dict[str, Any]] = Field(default_factory=list)
+    hitl_reason: str | None = None

@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
 from packages.core.cloud.base import ModelProvider, ModelResponse
+from packages.core.hitl.models import JobStatus, PipelineJob
 from packages.core.logging.logger import configure_logging, get_logger
 from packages.core.metrics.tracker import MetricsTracker
 from packages.core.orchestrator.engine import OrchestratorEngine
 from packages.core.services.comprehend import LocalTextAnalyzer
 from packages.core.services.textract import LocalDocumentProcessor
 from packages.core.types.schemas import TokenUsage
+from packages.domain_rfp.models import PipelineStatus
 from packages.domain_rfp.pipeline import RfpAnalysisPipeline, register_rfp_agents
 
 SAMPLE_RFP = (
@@ -26,11 +28,48 @@ SAMPLE_RFP = (
 )
 
 
+def _evaluation_payload(*, overall_confidence: float = 0.90) -> dict:
+    recommendation = "approve" if overall_confidence >= 0.85 else "flag_for_review"
+    return {
+        "overall_confidence": overall_confidence,
+        "findings": [
+            {
+                "criterion": "completeness",
+                "score": overall_confidence,
+                "reasoning": "Requirement coverage is adequate for the sample RFP.",
+            },
+            {
+                "criterion": "consistency",
+                "score": overall_confidence,
+                "reasoning": "Mappings cover extracted requirements.",
+            },
+            {
+                "criterion": "contradiction",
+                "score": overall_confidence,
+                "reasoning": "No mapper/analyzer contradictions detected.",
+            },
+            {
+                "criterion": "reasoning_quality",
+                "score": overall_confidence,
+                "reasoning": "Gap reasoning traces are present.",
+            },
+        ],
+        "contradictions": [],
+        "summary": (
+            "Pipeline outputs are consistent."
+            if recommendation == "approve"
+            else "Evaluator confidence is below the review threshold."
+        ),
+        "recommendation": recommendation,
+    }
+
+
 class PipelineScriptedProvider(ModelProvider):
     """Scripted provider that returns role-appropriate JSON payloads."""
 
-    def __init__(self) -> None:
+    def __init__(self, evaluator_confidence: float = 0.90) -> None:
         self.call_count = 0
+        self.evaluator_confidence = evaluator_confidence
 
     async def invoke(
         self,
@@ -46,7 +85,7 @@ class PipelineScriptedProvider(ModelProvider):
     ) -> ModelResponse:
         self.call_count += 1
         if agent_name == "requirements_extractor":
-            payload = {
+            payload: dict = {
                 "requirements": [
                     {
                         "requirement_id": "REQ-001",
@@ -120,7 +159,7 @@ class PipelineScriptedProvider(ModelProvider):
                 "unmatched": 0,
                 "overall_confidence": 0.84,
             }
-        else:
+        elif agent_name == "gap_analyzer":
             payload = {
                 "assessments": [
                     {
@@ -147,6 +186,8 @@ class PipelineScriptedProvider(ModelProvider):
                 "overall_risk": "acceptable",
                 "summary": "Single medium gap with viable mitigation.",
             }
+        else:
+            payload = _evaluation_payload(overall_confidence=self.evaluator_confidence)
 
         return ModelResponse(
             content=json.dumps(payload),
@@ -178,7 +219,6 @@ class FailingExtractionProvider(PipelineScriptedProvider):
                 ),
                 latency_ms=2,
             )
-        # Mapper/analyzer still get valid empty-friendly payloads.
         if agent_name == "capability_mapper":
             payload = {
                 "mappings": [],
@@ -187,7 +227,7 @@ class FailingExtractionProvider(PipelineScriptedProvider):
                 "unmatched": 0,
                 "overall_confidence": 0.2,
             }
-        else:
+        elif agent_name == "gap_analyzer":
             payload = {
                 "assessments": [],
                 "critical_gaps": 0,
@@ -197,6 +237,8 @@ class FailingExtractionProvider(PipelineScriptedProvider):
                 "overall_risk": "acceptable",
                 "summary": "No gaps because extraction failed.",
             }
+        else:
+            payload = _evaluation_payload(overall_confidence=0.3)
         return ModelResponse(
             content=json.dumps(payload),
             model_id="mock-model",
@@ -216,12 +258,7 @@ async def test_pipeline_returns_all_sections(capsys: pytest.CaptureFixture[str])
     get_logger("domain_rfp.pipeline")
 
     metrics = MetricsTracker()
-    provider = PipelineScriptedProvider()
-    # Manually track some LLM calls to simulate provider-side metric recording.
-    metrics.track_llm_call("requirements_extractor", "mock-model", 120, 180, 8, "pipe-1")
-    metrics.track_llm_call("capability_mapper", "mock-model", 120, 180, 8, "pipe-1")
-    metrics.track_llm_call("gap_analyzer", "mock-model", 120, 180, 8, "pipe-1")
-
+    provider = PipelineScriptedProvider(evaluator_confidence=0.90)
     engine = OrchestratorEngine(provider=provider, metrics=metrics)
     pipeline = RfpAnalysisPipeline(
         provider=provider,
@@ -232,20 +269,22 @@ async def test_pipeline_returns_all_sections(capsys: pytest.CaptureFixture[str])
     )
 
     result = await pipeline.analyze(str(SAMPLE_RFP), session_id="pipe-1")
-    assert "extraction_result" in result
-    assert "mapping_result" in result
-    assert "gap_analysis_result" in result
-    assert "pipeline_metrics" in result
-    assert result["pipeline_metrics"]["agent_count"] == 3
-    assert result["pipeline_metrics"]["total_time_ms"] >= 0
-    assert result["pipeline_metrics"]["total_tokens"] > 0
-    assert result["pipeline_metrics"]["total_cost_usd"] >= 0
+    assert result.extraction_result
+    assert result.mapping_result
+    assert result.gap_analysis_result
+    assert result.evaluation_result
+    assert result.pipeline_metrics["agent_count"] == 4
+    assert result.pipeline_metrics["total_time_ms"] >= 0
+    assert result.pipeline_metrics["total_tokens"] > 0
+    assert result.pipeline_metrics["total_cost_usd"] >= 0
+    assert result.status == PipelineStatus.COMPLETED
 
     registered = set(engine._registry.registered_agents.keys())
     assert registered >= {
         "requirements_extractor",
         "capability_mapper",
         "gap_analyzer",
+        "evaluator",
     }
 
     captured = capsys.readouterr().out
@@ -264,10 +303,54 @@ async def test_pipeline_handles_extraction_failure_gracefully() -> None:
         text_analyzer=LocalTextAnalyzer(),
     )
     result = await pipeline.analyze(str(SAMPLE_RFP), session_id="pipe-fail")
-    assert result["extraction_result"]["total_extracted"] == 0
-    assert "mapping_result" in result
-    assert "gap_analysis_result" in result
-    assert result["pipeline_metrics"]["agent_count"] == 3
+    assert result.extraction_result["total_extracted"] == 0
+    assert result.mapping_result is not None
+    assert result.gap_analysis_result is not None
+    assert result.pipeline_metrics["agent_count"] == 4
+
+
+@pytest.mark.asyncio
+async def test_pipeline_with_evaluator_above_threshold() -> None:
+    provider = PipelineScriptedProvider(evaluator_confidence=0.90)
+    pipeline = RfpAnalysisPipeline(
+        provider=provider,
+        metrics=MetricsTracker(),
+        document_processor=LocalDocumentProcessor(),
+        text_analyzer=LocalTextAnalyzer(),
+    )
+    result = await pipeline.analyze(str(SAMPLE_RFP), session_id="pipe-high")
+    assert result.status == PipelineStatus.COMPLETED
+    assert result.evaluation_result["overall_confidence"] == 0.90
+    assert result.pipeline_metrics["hitl_triggered"] is False
+    assert result.job_id is None
+
+
+@pytest.mark.asyncio
+async def test_pipeline_with_evaluator_below_threshold() -> None:
+    provider = PipelineScriptedProvider(evaluator_confidence=0.70)
+    hitl = MagicMock()
+    saved: dict[str, PipelineJob] = {}
+
+    def _save_job(job: PipelineJob) -> PipelineJob:
+        saved["job"] = job
+        return job
+
+    hitl.save_job.side_effect = _save_job
+    pipeline = RfpAnalysisPipeline(
+        provider=provider,
+        metrics=MetricsTracker(),
+        document_processor=LocalDocumentProcessor(),
+        text_analyzer=LocalTextAnalyzer(),
+        hitl_manager=hitl,
+    )
+    result = await pipeline.analyze(str(SAMPLE_RFP), session_id="pipe-low")
+    assert result.status == PipelineStatus.PENDING_REVIEW
+    assert result.job_id is not None
+    assert result.hitl_reason
+    assert result.pipeline_metrics["hitl_triggered"] is True
+    hitl.save_job.assert_called_once()
+    assert saved["job"].status == JobStatus.PENDING_REVIEW
+    assert saved["job"].evaluator_confidence == 0.70
 
 
 def test_register_rfp_agents_with_orchestrator() -> None:
@@ -277,3 +360,4 @@ def test_register_rfp_agents_with_orchestrator() -> None:
     assert "requirements_extractor" in engine._registry.registered_agents
     assert "capability_mapper" in engine._registry.registered_agents
     assert "gap_analyzer" in engine._registry.registered_agents
+    assert "evaluator" in engine._registry.registered_agents
