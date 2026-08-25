@@ -16,6 +16,8 @@ class ActionType(str, Enum):
     TOOL_CALL = "tool_call"
     EVALUATION = "evaluation"
     HITL_DECISION = "hitl_decision"
+    RETRIEVAL = "retrieval"
+    EMBEDDING = "embedding"
 
 
 class HITLStatus(str, Enum):

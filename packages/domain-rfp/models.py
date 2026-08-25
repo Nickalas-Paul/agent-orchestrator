@@ -102,3 +102,5 @@ class PipelineResult(BaseModel):
     pipeline_metrics: dict[str, Any] = Field(default_factory=dict)
     agent_responses: list[dict[str, Any]] = Field(default_factory=list)
     hitl_reason: str | None = None
+    retrieved_chunks: list[dict[str, Any]] = Field(default_factory=list)
+    prompt_versions: dict[str, str] = Field(default_factory=dict)

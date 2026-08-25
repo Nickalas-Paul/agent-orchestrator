@@ -13,7 +13,7 @@ def run_migrations() -> None:
     migration_dir = Path(__file__).parent.parent.parent.parent / "infra" / "init-db"
     conn = psycopg2.connect(
         host=os.getenv("POSTGRES_HOST", "localhost"),
-        port=int(os.getenv("POSTGRES_PORT", "5432")),
+        port=int(os.getenv("POSTGRES_PORT", "5433")),
         dbname=os.getenv("POSTGRES_DB", "agent_orchestrator"),
         user=os.getenv("POSTGRES_USER", "agent_user"),
         password=os.getenv("POSTGRES_PASSWORD", "agent_password"),

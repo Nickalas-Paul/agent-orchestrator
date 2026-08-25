@@ -24,7 +24,7 @@ class DatabasePool:
             min_conn,
             max_conn,
             host=os.getenv("POSTGRES_HOST", "localhost"),
-            port=int(os.getenv("POSTGRES_PORT", "5432")),
+            port=int(os.getenv("POSTGRES_PORT", "5433")),
             dbname=os.getenv("POSTGRES_DB", "agent_orchestrator"),
             user=os.getenv("POSTGRES_USER", "agent_user"),
             password=os.getenv("POSTGRES_PASSWORD", "agent_password"),

@@ -20,6 +20,8 @@ class ModelConfig(BaseModel):
     bedrock_model_id: str = "anthropic.claude-sonnet-4-6-20250514"
     local_endpoint: str = "http://localhost:11434"
     local_model_name: str = "llama3"
+    embedding_model_id: str = "amazon.titan-embed-text-v2:0"
+    embedding_dimensions: int = 1024
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
 
@@ -49,6 +51,8 @@ def get_model_config(*, reload_env: bool = False) -> ModelConfig:
         ),
         local_endpoint=os.getenv("LOCAL_MODEL_ENDPOINT", "http://localhost:11434"),
         local_model_name=os.getenv("LOCAL_MODEL_NAME", "llama3"),
+        embedding_model_id=os.getenv("EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0"),
+        embedding_dimensions=int(os.getenv("EMBEDDING_DIMENSIONS", "1024")),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID") or None,
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY") or None,
     )
