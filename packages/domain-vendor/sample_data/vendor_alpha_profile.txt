@@ -1,0 +1,31 @@
+CloudScale Solutions is a privately held cloud infrastructure vendor founded in 2014 and
+headquartered in Austin, Texas. The company sells managed compute, block and object storage,
+software-defined networking, and a security control plane to mid-market and enterprise buyers
+that want AWS-like elasticity without operating the raw hyperscaler console. Production
+footprint spans three US regions (us-east-1, us-west-2, us-central-1) plus a warm DR site in
+Ireland. Customers deploy virtual machines, Kubernetes clusters, and GPU pools through a
+single control plane with Terraform and REST API coverage.
+
+Compute. CloudScale offers general-purpose, memory-optimized, and GPU instance families with
+autoscaling groups and scheduled scale-to-zero for non-production. The Kubernetes service
+includes managed control planes, cluster autoscaler, and a private container registry.
+Storage. Block volumes are provisioned in 100 GB increments with AES-256 at rest and optional
+customer-managed keys. Object storage supports S3-compatible APIs, lifecycle policies, and
+cross-region replication with a 99.99% durability target. Networking. Virtual private clouds,
+private interconnect, and a global anycast load balancer are included. Security. A built-in
+WAF, network microsegmentation, and identity federation (SAML/OIDC) ship with every paid
+plan. The platform is SOC 2 Type II attested and ISO 27001 certified; pentest summaries are
+available under NDA.
+
+Pricing is tiered. Starter is $2,400 per month for up to 32 vCPU, 1 TB block storage, and
+community support. Professional is $9,800 per month for 128 vCPU, 8 TB storage, 24x7 ticket
+support with a 1-hour P1 target, and two named technical contacts. Enterprise is custom and
+typically $180,000–$420,000 annually depending on reserved capacity, dedicated hosts, and a
+named customer success manager. Data egress is $0.08/GB after 2 TB/month. Marketplace
+add-ons (managed Postgres, secrets vault) are billed separately.
+
+CloudScale positions itself as the “governed hyperscale alternative” for regulated industries
+that need US data residency, predictable reserved pricing, and a thinner operational surface
+than DIY AWS. Competitors cited in analyst notes include the major public clouds and regional
+colo-plus-VMware stacks. Known gaps: no native serverless functions product, limited APAC
+regions, and GPU capacity that is allocation-based rather than on-demand during peak quarters.

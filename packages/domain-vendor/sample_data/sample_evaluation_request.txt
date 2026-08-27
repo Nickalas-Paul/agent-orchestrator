@@ -1,0 +1,7 @@
+Evaluate CloudScale Solutions and DataStream Analytics for our enterprise cloud migration
+project. The program will move core workloads off collocated VMware over 18 months and
+stand up a governed analytics layer for finance and operations. Key criteria: scalability
+under seasonal 3x load, security compliance (SOC 2 Type II required; ISO 27001 preferred),
+total cost of ownership over three years including support and egress, and integration with
+existing IAM, Terraform, and AWS accounts. Produce capability evidence, a pricing readout
+with risk flags, and a market-position assessment that a steering committee can review.

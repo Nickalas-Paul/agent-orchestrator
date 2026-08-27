@@ -1,0 +1,32 @@
+DataStream Analytics is a data platform vendor founded in 2017 in Denver, Colorado. The
+product is a managed analytics stack that combines streaming ingestion, a columnar warehouse,
+and an ML pipeline service. Target buyers are data engineering teams at mid-market SaaS
+companies and digital-native enterprises that have outgrown a single warehouse and need
+low-latency operational analytics. The control plane is multi-tenant; customer data planes
+can run in DataStream-hosted VPCs or in the customer’s AWS/Azure account (bring-your-own-cloud).
+
+Capabilities. Real-time analytics: Kafka-compatible ingestion, 5-second dashboard freshness
+on standard workloads, and materialized views with incremental refresh. Data warehousing:
+separated storage and compute, ANSI SQL, time-travel for 30 days on Professional and 90 days
+on Enterprise, and native connectors for Salesforce, Snowflake export, and S3. ML pipeline:
+feature store, scheduled training jobs on CPU/GPU, and batch plus streaming inference
+endpoints. Governance includes column-level access control, audit logs retained for 365 days,
+and PII detection on ingest. The company holds SOC 2 Type II and ISO 27001; HIPAA BAA is
+available on Enterprise.
+
+Pricing is usage-based with compute-hour billing. Compute is $0.42 per compute-hour for
+standard warehouses and $1.15 per GPU-hour for training jobs. Storage is $24 per TB-month
+for hot data and $8 per TB-month for infrequent access. Streaming ingest is $0.10 per GB.
+A monthly platform fee of $1,500 (Professional) or $6,000 (Enterprise) covers control plane,
+support, and connector usage. Example: a customer running 4,000 compute-hours, 20 TB hot
+storage, and 2 TB ingest would see roughly $1,680 compute + $480 storage + $200 ingest +
+$1,500 platform ≈ $3,860 per month before committed-use discounts. Annual committed spend
+of $50,000 unlocks 18% off compute. Overage above committed hours bills at list price.
+
+DataStream positions as the “streaming-first warehouse” against Snowflake, Databricks, and
+warehouse-plus-Kafka assemblies. Differentiators claimed: sub-10-second freshness without a
+separate serving layer, BYOC data-plane option, and a single bill for stream + warehouse +
+training. Risks: usage-based bills can spike during backfills; GPU queues exist in us-east;
+there is no on-premises appliance; and the ML feature store is younger than specialist ML
+platforms. Integration is strongest with AWS; Azure BYOC is generally available, GCP is
+preview.

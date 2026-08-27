@@ -81,3 +81,14 @@ class AgentResponse(BaseModel):
     token_usage: TokenUsage = Field(default_factory=TokenUsage)
     processing_time_ms: int = 0
     created_at: datetime = Field(default_factory=_utc_now)
+
+
+class BusinessMetrics(BaseModel):
+    """Business alignment metrics for a pipeline run."""
+
+    cost_per_interaction_usd: float = 0.0
+    task_completion_status: str = "completed"  # "completed" | "pending_review" | "failed"
+    processing_time_ms: int = 0
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    agent_call_count: int = 0

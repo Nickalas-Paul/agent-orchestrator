@@ -3,8 +3,9 @@
 .env.local
 .env.*.local
 
-# Windows junction used so packages.domain_rfp imports resolve to packages/domain-rfp
+# Windows junctions used so hyphenated domain packages import with underscores
 packages/domain_rfp
+packages/domain_vendor
 
 # Python
 __pycache__/

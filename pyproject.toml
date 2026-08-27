@@ -48,12 +48,18 @@ packages = [
     "packages.domain_rfp",
     "packages.domain_rfp.agents",
     "packages.domain_rfp.prompts",
+    "packages.domain_vendor",
+    "packages.domain_vendor.agents",
+    "packages.domain_vendor.prompts",
 ]
 
 [tool.setuptools.package-dir]
 "packages.domain_rfp" = "packages/domain-rfp"
 "packages.domain_rfp.agents" = "packages/domain-rfp/agents"
 "packages.domain_rfp.prompts" = "packages/domain-rfp/prompts"
+"packages.domain_vendor" = "packages/domain-vendor"
+"packages.domain_vendor.agents" = "packages/domain-vendor/agents"
+"packages.domain_vendor.prompts" = "packages/domain-vendor/prompts"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
