@@ -1,0 +1,37 @@
+PREFERRED / STANDARD CONTRACT TERMS — Procurement Playbook
+
+1. Liability Cap
+Preferred: Unlimited liability for IP infringement, confidentiality breaches, and
+willful misconduct. For all other claims, cap at twenty-four (24) months of fees paid.
+Indirect and consequential damages may be excluded except for confidentiality and IP.
+
+2. Termination Notice
+Preferred: Sixty (60) days' prior written notice for termination for convenience.
+Immediate termination permitted for material breach uncured within thirty (30) days.
+
+3. Intellectual Property Ownership
+Preferred: Client owns all deliverables, work product, and custom developments upon
+payment. Provider retains only pre-existing tools and generic methodologies with no
+license over Client confidential information.
+
+4. Confidentiality Duration
+Preferred: Five (5) years from disclosure, or indefinitely for trade secrets.
+
+5. Indemnification Scope
+Preferred: Broad indemnification covering third-party claims for IP infringement,
+personal injury, property damage, data breaches caused by Provider, and negligence —
+not limited to willful misconduct or gross negligence.
+
+6. Data Protection
+Preferred: Provider maintains SOC 2 Type II (or equivalent) and complies with GDPR/CCPA
+as applicable. Specific administrative, technical, and physical controls must be
+documented; "commercially reasonable" alone is insufficient.
+
+7. Governing Law & Dispute Resolution
+Preferred: Delaware law with binding arbitration under AAA rules after a thirty (30)
+day negotiation period.
+
+8. Force Majeure
+Preferred: Excludes payment obligations; requires prompt notice within five (5)
+business days and mitigation efforts; does not excuse prolonged outages beyond sixty
+(60) days without termination rights for the non-affected party.

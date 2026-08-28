@@ -6,6 +6,7 @@
 # Windows junctions used so hyphenated domain packages import with underscores
 packages/domain_rfp
 packages/domain_vendor
+packages/domain_contract
 
 # Python
 __pycache__/

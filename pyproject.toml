@@ -52,6 +52,9 @@ packages = [
     "packages.domain_vendor",
     "packages.domain_vendor.agents",
     "packages.domain_vendor.prompts",
+    "packages.domain_contract",
+    "packages.domain_contract.agents",
+    "packages.domain_contract.prompts",
 ]
 
 [tool.setuptools.package-dir]
@@ -61,6 +64,9 @@ packages = [
 "packages.domain_vendor" = "packages/domain-vendor"
 "packages.domain_vendor.agents" = "packages/domain-vendor/agents"
 "packages.domain_vendor.prompts" = "packages/domain-vendor/prompts"
+"packages.domain_contract" = "packages/domain-contract"
+"packages.domain_contract.agents" = "packages/domain-contract/agents"
+"packages.domain_contract.prompts" = "packages/domain-contract/prompts"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
