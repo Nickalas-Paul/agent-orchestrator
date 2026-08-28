@@ -3,6 +3,7 @@
 from packages.core.audit import ActionType, AuditEntry, AuditLogger, HITLStatus
 from packages.core.database import DatabasePool
 from packages.core.hitl import HITLManager, HITLReview, JobStatus, PipelineJob, ReviewDecision
+from packages.core.utils import clamp_confidence, extract_json_object
 
 __all__ = [
     "ActionType",
@@ -15,4 +16,6 @@ __all__ = [
     "JobStatus",
     "PipelineJob",
     "ReviewDecision",
+    "clamp_confidence",
+    "extract_json_object",
 ]

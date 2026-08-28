@@ -46,6 +46,8 @@ packages = [
     "packages.core.rag",
     "packages.core.prompts",
     "packages.core.guardrails",
+    "packages.core.evaluation",
+    "packages.core.security",
     "packages.domain_rfp",
     "packages.domain_rfp.agents",
     "packages.domain_rfp.prompts",
@@ -58,6 +60,8 @@ packages = [
 ]
 
 [tool.setuptools.package-dir]
+"packages.core.evaluation" = "packages/core/evaluation"
+"packages.core.security" = "packages/core/security"
 "packages.domain_rfp" = "packages/domain-rfp"
 "packages.domain_rfp.agents" = "packages/domain-rfp/agents"
 "packages.domain_rfp.prompts" = "packages/domain-rfp/prompts"
