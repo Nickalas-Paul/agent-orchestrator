@@ -18,6 +18,7 @@ class ActionType(str, Enum):
     HITL_DECISION = "hitl_decision"
     RETRIEVAL = "retrieval"
     EMBEDDING = "embedding"
+    GUARDRAIL_CHECK = "guardrail_check"
 
 
 class HITLStatus(str, Enum):

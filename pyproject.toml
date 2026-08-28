@@ -45,6 +45,7 @@ packages = [
     "packages.core.hitl",
     "packages.core.rag",
     "packages.core.prompts",
+    "packages.core.guardrails",
     "packages.domain_rfp",
     "packages.domain_rfp.agents",
     "packages.domain_rfp.prompts",

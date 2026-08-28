@@ -9,6 +9,7 @@ from uuid import uuid4
 from packages.core.audit.logger import AuditLogger
 from packages.core.audit.models import ActionType, AuditEntry, HITLStatus
 from packages.core.cloud.base import ModelProvider
+from packages.core.guardrails import GuardrailAction, GuardrailsEngine
 from packages.core.hitl.manager import HITLManager
 from packages.core.hitl.models import JobStatus, PipelineJob
 from packages.core.logging.logger import get_logger
@@ -41,6 +42,7 @@ class VendorEvaluationPipeline:
         hitl_manager: HITLManager | None = None,
         confidence_threshold: float = 0.85,
         prompt_registry: PromptRegistry | None = None,
+        guardrails: GuardrailsEngine | None = None,
     ) -> None:
         """Initialize the pipeline and optionally register prompt versions.
 
@@ -52,6 +54,7 @@ class VendorEvaluationPipeline:
             hitl_manager: Optional HITL job manager. When omitted, jobs are not persisted.
             confidence_threshold: Evaluator confidence required to skip human review.
             prompt_registry: Optional prompt registry for version tracking.
+            guardrails: Optional shared guardrails engine for input/output safety checks.
         """
         self._provider = provider
         self._metrics = metrics
@@ -59,6 +62,7 @@ class VendorEvaluationPipeline:
         self._audit = audit_logger
         self._hitl = hitl_manager
         self._confidence_threshold = confidence_threshold
+        self._guardrails = guardrails
         self._prompt_versions: dict[str, str] = {}
         self._researcher = CapabilityResearcherAgent(
             provider=provider,
@@ -112,6 +116,30 @@ class VendorEvaluationPipeline:
             vendor_name=vendor_name,
             job_id=job_id,
         )
+
+        # Input guardrails
+        if self._guardrails is not None:
+            input_result = await self._guardrails.check_input(
+                text=vendor_document,
+                domain="vendor",
+                session_id=session_id,
+            )
+            if not input_result.passed:
+                logger.warning(
+                    "vendor_input_guardrail_blocked",
+                    session_id=session_id,
+                    vendor_name=vendor_name,
+                    reasons=input_result.blocked_reasons,
+                )
+                return VendorEvaluationResult(
+                    status=VendorPipelineStatus.FAILED,
+                    job_id=None,
+                    vendor_name=vendor_name,
+                    hitl_reason=(
+                        "Input blocked by guardrails: "
+                        + "; ".join(input_result.blocked_reasons)
+                    ),
+                )
 
         capability_response = await self._researcher.research_capabilities(
             vendor_name=vendor_name,
@@ -173,19 +201,39 @@ class VendorEvaluationPipeline:
         )
 
         hitl_triggered = eval_response.confidence_score < self._confidence_threshold
-        status = (
-            VendorPipelineStatus.PENDING_REVIEW
-            if hitl_triggered
-            else VendorPipelineStatus.COMPLETED
-        )
         hitl_reason: str | None = None
-        persisted_job_id: str | None = None
         if hitl_triggered:
             hitl_reason = str(
                 eval_response.output.get("summary")
                 or eval_response.output.get("recommendation")
                 or "Evaluator confidence below threshold"
             )
+
+        retrieved_chunks = capability_response.output.get("retrieved_chunks")
+        if not isinstance(retrieved_chunks, list):
+            retrieved_chunks = []
+
+        # Output guardrails — FLAG or BLOCK forces HITL review
+        if self._guardrails is not None:
+            output_result = await self._guardrails.check_output(
+                text=str(eval_response.output),
+                retrieved_chunks=retrieved_chunks if retrieved_chunks else None,
+                domain="vendor",
+                session_id=session_id,
+            )
+            if output_result.action != GuardrailAction.PASS:
+                hitl_triggered = True
+                hitl_reason = (
+                    "Output flagged by guardrails: "
+                    + "; ".join(output_result.blocked_reasons + output_result.flagged_reasons)
+                )
+
+        status = (
+            VendorPipelineStatus.PENDING_REVIEW
+            if hitl_triggered
+            else VendorPipelineStatus.COMPLETED
+        )
+        persisted_job_id: str | None = None
 
         pipeline_outputs = {
             "capability_result": capability_response.output,
@@ -246,9 +294,6 @@ class VendorEvaluationPipeline:
             total_output_tokens=int(session_summary.get("output_tokens", 0)),
             agent_call_count=int(session_summary.get("call_count", 0)),
         )
-        retrieved_chunks = capability_response.output.get("retrieved_chunks")
-        if not isinstance(retrieved_chunks, list):
-            retrieved_chunks = []
 
         logger.info(
             "vendor_pipeline_complete",

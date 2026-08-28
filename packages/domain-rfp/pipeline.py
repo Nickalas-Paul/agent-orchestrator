@@ -8,6 +8,7 @@ from typing import Any
 from packages.core.audit.logger import AuditLogger
 from packages.core.audit.models import ActionType, AuditEntry, HITLStatus
 from packages.core.cloud.base import ModelProvider
+from packages.core.guardrails import GuardrailAction, GuardrailsEngine
 from packages.core.hitl.manager import HITLManager
 from packages.core.hitl.models import JobStatus, PipelineJob
 from packages.core.logging.logger import get_logger
@@ -84,6 +85,7 @@ class RfpAnalysisPipeline:
         audit_logger: AuditLogger | None = None,
         hitl_manager: HITLManager | None = None,
         confidence_threshold: float = 0.85,
+        guardrails: GuardrailsEngine | None = None,
     ) -> None:
         """Initialize the pipeline and optionally register agents.
 
@@ -96,12 +98,14 @@ class RfpAnalysisPipeline:
             audit_logger: Optional insert-only audit logger. When omitted, DB writes are skipped.
             hitl_manager: Optional HITL job manager. When omitted, jobs are not persisted.
             confidence_threshold: Evaluator confidence required to skip human review.
+            guardrails: Optional shared guardrails engine for input/output safety checks.
         """
         self._provider = provider
         self._metrics = metrics
         self._audit = audit_logger
         self._hitl = hitl_manager
         self._confidence_threshold = confidence_threshold
+        self._guardrails = guardrails
         self._extractor = RequirementsExtractorAgent(
             provider=provider,
             metrics=metrics,
@@ -127,6 +131,28 @@ class RfpAnalysisPipeline:
         """
         started = time.perf_counter()
         logger.info("rfp_pipeline_start", session_id=session_id)
+
+        # Input guardrails (when document is text / path string)
+        if self._guardrails is not None and isinstance(document, str):
+            input_result = await self._guardrails.check_input(
+                text=document,
+                domain="rfp",
+                session_id=session_id,
+            )
+            if not input_result.passed:
+                logger.warning(
+                    "rfp_input_guardrail_blocked",
+                    session_id=session_id,
+                    reasons=input_result.blocked_reasons,
+                )
+                return PipelineResult(
+                    status=PipelineStatus.FAILED,
+                    job_id=None,
+                    hitl_reason=(
+                        "Input blocked by guardrails: "
+                        + "; ".join(input_result.blocked_reasons)
+                    ),
+                )
 
         extraction_response = await self._extractor.process_document(
             document=document,
@@ -165,6 +191,29 @@ class RfpAnalysisPipeline:
             session_id=session_id,
         )
 
+        hitl_triggered = eval_response.confidence_score < self._confidence_threshold
+        hitl_reason: str | None = None
+        if hitl_triggered:
+            hitl_reason = str(
+                eval_response.output.get("summary")
+                or eval_response.output.get("recommendation")
+                or "Evaluator confidence below threshold"
+            )
+
+        # Output guardrails on evaluator response — FLAG or BLOCK forces HITL
+        if self._guardrails is not None:
+            output_result = await self._guardrails.check_output(
+                text=str(eval_response.output),
+                domain="rfp",
+                session_id=session_id,
+            )
+            if output_result.action != GuardrailAction.PASS:
+                hitl_triggered = True
+                hitl_reason = (
+                    "Output flagged by guardrails: "
+                    + "; ".join(output_result.blocked_reasons + output_result.flagged_reasons)
+                )
+
         self._log_agent_invoke(
             session_id=session_id,
             agent_name=extraction_response.agent_name,
@@ -195,18 +244,10 @@ class RfpAnalysisPipeline:
             response=eval_response,
         )
 
-        hitl_triggered = eval_response.confidence_score < self._confidence_threshold
         status = (
             PipelineStatus.PENDING_REVIEW if hitl_triggered else PipelineStatus.COMPLETED
         )
         job_id: str | None = None
-        hitl_reason: str | None = None
-        if hitl_triggered:
-            hitl_reason = str(
-                eval_response.output.get("summary")
-                or eval_response.output.get("recommendation")
-                or "Evaluator confidence below threshold"
-            )
 
         pipeline_outputs = {
             "extraction_result": extraction_response.output,
