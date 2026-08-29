@@ -199,6 +199,34 @@ domains commonly tested for service selection, responsible AI, and security.
 
 ---
 
+### Pipeline Orchestration
+
+| Your Component | AWS Equivalent | Exam Objectives |
+|---|---|---|
+| Sequential Python pipelines (`packages/domain-*/pipeline.py`) | AWS Step Functions | 2.1.1, 3.2.1, 5.1.3 |
+
+**What yours does:** Each domain runs specialist agents in a **hardcoded sequential order** (direct async method calls). Outputs from one agent feed the next; evaluators, guardrails, and HITL are composed in the pipeline file. `OrchestratorEngine` / `DAGExecutor` exist in core but are not the domain runtime.
+
+**What Step Functions does:** Managed workflow orchestration with visual state machines, built-in error handling and retries, parallel branches, timeouts, and native integration with 200+ AWS services (including Bedrock, Lambda, SNS/SQS, and DynamoDB). Executions are observable and auditable at the state level.
+
+**Gap:** Your pipelines are sequential Python with application-level try/except (Contract) and no visual monitor, automatic retry policy, or dynamic branching. Step Functions adds durable orchestration, service integrations, and operational visibility that this codebase does not implement.
+
+---
+
+### Local Containers and Deployment
+
+| Your Component | AWS Equivalent | Exam Objectives |
+|---|---|---|
+| Docker Compose (`infra/docker-compose.yml` — Postgres + Redis) | Amazon ECS or Amazon EKS | 3.2.1, 5.1.1, 5.3.1 |
+
+**What yours does:** Local development stack via Docker Compose: `pgvector/pgvector:pg16` and `redis:7-alpine`, with init SQL mounted for schema and audit triggers. Application code does not currently consume Redis.
+
+**What ECS / EKS does:** Managed container orchestration for production. **ECS** suits simpler service topologies and pairs with Fargate for serverless compute. **EKS** runs Kubernetes-native workloads with cluster control-plane management by AWS. Both integrate with IAM, VPC networking, load balancing, and auto scaling.
+
+**Gap:** Docker Compose is local-oriented: no multi-AZ auto scaling, service mesh, or production service discovery as first-class features. ECS/EKS provide production orchestration, deployment strategies, and cloud-native operations that Compose does not replace.
+
+---
+
 ## Cross-Cutting Study Notes
 
 1. **Abstraction pattern:** Almost every mapping uses an ABC or optional dependency (`ModelProvider`, `SecretsProvider`, `GuardrailsEngine`, `HITLAccessControl`). On the exam, prefer the managed service that matches the *capability*, then note how IAM/KMS/CloudTrail secure it.
